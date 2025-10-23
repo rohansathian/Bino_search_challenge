@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bino Search Challenge — Rohan</title>
+  <meta name="description" content="A playful simulated WhatsApp-style search to create shareable 'I found it with Bino' posters." />
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;--glass: rgba(255,255,255,0.04)}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071022 0%, #0b1724 100%);color:#e6eef6}
+    .wrap{max-width:920px;margin:28px auto;padding:20px}
+    header{display:flex;gap:12px;align-items:center}
+    .logo{width:56px;height:56px;background:linear-gradient(135deg,var(--accent),#8b5cf6);border-radius:12px;display:grid;place-items:center;font-weight:700}
+    .logo span{font-size:20px}
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:6px 0 18px}
+
+    .layout{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    @media(max-width:880px){.layout{grid-template-columns:1fr;}.right{order:2}}
+
+    /* main card */
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:14px;padding:16px;box-shadow:0 6px 24px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03)}
+
+    .search-row{display:flex;gap:10px}
+    input.search{flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:15px}
+    button.btn{background:var(--accent);border:none;padding:10px 14px;border-radius:10px;color:#041024;font-weight:700;cursor:pointer}
+    button.btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+
+    .chat{height:420px;overflow:auto;padding:12px;border-radius:10px;margin-top:12px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border:1px solid rgba(255,255,255,0.02)}
+    .bubble{max-width:78%;padding:10px 12px;border-radius:12px;margin:8px 0;line-height:1.4}
+    .bubble.user{background:linear-gradient(180deg,#0ea5a4,#06b6d4);color:#02121b;margin-left:auto;border-bottom-right-radius:4px}
+    .bubble.bino{background:rgba(255,255,255,0.03);color:var(--muted);border-bottom-left-radius:4px}
+
+    .typing{display:inline-block;height:10px;width:44px;border-radius:6px;background:linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 100%);position:relative}
+    .typing::after{content:'';position:absolute;left:6px;top:6px;height:6px;width:6px;border-radius:50%;background:#fff;opacity:0.7;animation:blink 1s infinite}
+    @keyframes blink{0%{opacity:0.2;transform:translateX(0)}50%{opacity:1;transform:translateX(10px)}100%{opacity:0.2;transform:translateX(0)}}
+
+    /* right panel */
+    .right{display:flex;flex-direction:column;gap:12px}
+    .card.small{padding:12px}
+    .poster-preview{height:220px;border-radius:8px;background:linear-gradient(180deg,#071527,#052034);display:grid;place-items:center;border:1px dashed rgba(255,255,255,0.03)}
+    .poster-preview .txt{padding:12px;text-align:center}
+
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    .actions{display:flex;gap:8px;align-items:center}
+    .muted{color:var(--muted);font-size:13px}
+
+    /* small helpers */
+    .kbd{background:#041024;padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo"><span>B</span></div>
+      <div>
+        <h1>Bino Search Challenge</h1>
+        <p class="lead">Simulate a WhatsApp search → get a Bino-style result → generate a shareable poster.</p>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main>
+        <div class="card">
+          <div class="search-row">
+            <input id="query" class="search" placeholder="Type something like 'best café in Koramangala'" />
+            <button id="searchBtn" class="btn">Search</button>
+            <button id="surpriseBtn" class="btn secondary">Surprise me</button>
+          </div>
+
+          <div id="chat" class="chat" aria-live="polite">
+            <div class="bubble bino">
+              Hey! I'm Bino — try searching something (example: "best dosa near me").
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+            <button id="shareBtn" class="btn" style="flex:1">Share your Bino Find</button>
+            <button id="clearBtn" class="btn secondary">Clear</button>
+          </div>
+
+          <footer>
+            Tip: This is a playful mock — recruiters love small deployed projects. Deploy on GitHub Pages.
+          </footer>
+        </div>
+      </main>
+
+      <aside class="right">
+        <div class="card small">
+          <strong>How it works</strong>
+          <p class="muted">Type a search → Bino replies with a creative mock response. Click <span class="kbd">Share your Bino Find</span> to create a downloadable poster image (PNG).</p>
+        </div>
+
+        <div class="card small poster-preview" id="posterPreview">
+          <div class="txt">
+            <div style="font-weight:700;font-size:18px">I found it with Bino 🔍</div>
+            <div id="posterLine" style="margin-top:8px;color:var(--muted);">Try a search to preview a poster</div>
+          </div>
+        </div>
+
+        <div class="card small">
+          <strong>Deploy</strong>
+          <p class="muted">Create a GitHub repo, add this file as <code>index.html</code> and enable GitHub Pages (branch: main). Or drag into Vercel for instant deploy.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // Simple dataset of creative response templates
+    const templates = [
+      (q)=>`Top picks for "${q}" near you:\n1) The Corner Café — 4.6 ⭐ (500+ reviews)\n2) BrewHouse — cozy workspace with outlets\n3) Hidden Dosa Hut — late-night favorite`,
+      (q)=>`Found trending results for "${q}":\n• Popular on Bino today\n• Verified by local users\n• Quick directions available`,
+      (q)=>`Here are 3 options: \n• A local favorite (budget-friendly)\n• A premium spot (great ambience)\n• A 24/7 option (late-night) — tell me which you want`,
+      (q)=>`Local expert tip for "${q}": check reviews and call ahead. This place has great ratings and free parking.`,
+      (q)=>`Hidden gem alert! "${q}" — small place, amazing food. People love it for quiet work sessions.`
+    ];
+
+    const chatEl = document.getElementById('chat');
+    const queryEl = document.getElementById('query');
+    const searchBtn = document.getElementById('searchBtn');
+    const surpriseBtn = document.getElementById('surpriseBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const posterPreview = document.getElementById('posterPreview');
+    const posterLine = document.getElementById('posterLine');
+
+    function appendBubble(text, who='bino'){
+      const div = document.createElement('div');
+      div.className = 'bubble '+who;
+      // preserve line breaks
+      text.split('\n').forEach((line, i)=>{
+        const p = document.createElement('div');
+        p.textContent = line;
+        div.appendChild(p);
+      });
+      chatEl.appendChild(div);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      return div;
+    }
+
+    function showTyping(){
+      const d = document.createElement('div');
+      d.className = 'bubble bino';
+      const t = document.createElement('div');
+      t.className = 'typing';
+      d.appendChild(t);
+      chatEl.appendChild(d);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      return d;
+    }
+
+    function makeResponse(q){
+      const idx = Math.floor(Math.random()*templates.length);
+      return templates[idx](q);
+    }
+
+    function doSearch(q){
+      if(!q || !q.trim()) return;
+      appendBubble(q, 'user');
+      const typing = showTyping();
+      setTimeout(()=>{
+        typing.remove();
+        const resp = makeResponse(q);
+        appendBubble(resp, 'bino');
+        posterLine.textContent = `${q} — ${resp.split('\n')[0]}`;
+      }, 800 + Math.random()*900);
+    }
+
+    searchBtn.addEventListener('click', ()=>{doSearch(queryEl.value)});
+    surpriseBtn.addEventListener('click', ()=>{const q = ['best café in Koramangala','cheap dosa near me','cozy workspace near me','late night food in Indiranagar'][Math.floor(Math.random()*4)]; queryEl.value=q; doSearch(q);});
+    clearBtn.addEventListener('click', ()=>{chatEl.innerHTML=''; appendBubble("Hey! I'm Bino — try searching something (example: 'best dosa near me').", 'bino'); posterLine.textContent = 'Try a search to preview a poster';});
+
+    // Make poster using Canvas and open in new tab as PNG
+    function makePosterImage(title, subtitle){
+      const W = 900, H = 500;
+      const c = document.createElement('canvas'); c.width = W; c.height = H;
+      const ctx = c.getContext('2d');
+
+      // background
+      const g = ctx.createLinearGradient(0,0,0,H);
+      g.addColorStop(0, '#071527'); g.addColorStop(1,'#052034');
+      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+      // header bar
+      ctx.fillStyle = '#06121a'; ctx.fillRect(0,0,W,88);
+
+      // big text
+      ctx.fillStyle = '#e6f6fb'; ctx.font = '700 36px Inter, Arial'; ctx.fillText('I found it with Bino 🔍', 36, 56);
+
+      // title
+      ctx.font = '600 28px Inter, Arial'; ctx.fillText(title, 36, 140);
+
+      // subtitle wrapped
+      ctx.font = '400 18px Inter, Arial';
+      const lines = wrapText(ctx, subtitle, W-72);
+      ctx.fillStyle = '#cfeaf1';
+      lines.forEach((ln,i)=>ctx.fillText(ln,36,180 + i*26));
+
+      // footer/cta
+      ctx.fillStyle = '#94a3b8'; ctx.font = '500 14px Inter, Arial';
+      ctx.fillText('Made by Rohan — Bino Search Challenge', 36, H-36);
+
+      return c.toDataURL('image/png');
+    }
+
+    function wrapText(ctx, text, maxWidth){
+      const words = text.split(' ');
+      const lines = []; let cur = '';
+      words.forEach(w=>{
+        const test = cur ? cur + ' ' + w : w;
+        if(ctx.measureText(test).width > maxWidth){ lines.push(cur); cur = w; } else cur = test;
+      }); if(cur) lines.push(cur);
+      return lines;
+    }
+
+    shareBtn.addEventListener('click', ()=>{
+      // get last bino message as subtitle
+      const bins = Array.from(chatEl.querySelectorAll('.bubble.bino'));
+      if(bins.length===0){ alert('Do a search first!'); return; }
+      const last = bins[bins.length-1].innerText;
+      const users = Array.from(chatEl.querySelectorAll('.bubble.user'));
+      const lastUser = users.length? users[users.length-1].innerText : 'My Bino Find';
+      const imgData = makePosterImage(lastUser, last);
+
+      // preview
+      const img = new Image(); img.src = imgData; img.style.maxWidth='100%';
+      posterPreview.innerHTML=''; posterPreview.appendChild(img);
+
+      // open in new tab and trigger download
+      const w = window.open(imgData, '_blank');
+      try{ // create a download link programmatically
+        const a = document.createElement('a'); a.href = imgData; a.download = 'bino-find.png'; document.body.appendChild(a); a.click(); a.remove();
+      }catch(e){console.warn('download blocked', e)}
+    });
+
+    // initialize
+    appendBubble("Hey! I'm Bino — try searching something (example: 'best dosa near me').", 'bino');
+
+    // keyboard enter
+    queryEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ doSearch(queryEl.value); } });
+  </script>
+</body>
+</html>
